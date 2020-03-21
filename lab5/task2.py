@@ -1,4 +1,5 @@
 import graphics as gr
+import math
 
 SIZE_X = 800
 SIZE_Y = 800
@@ -11,75 +12,62 @@ def start_window():
     rectangle.setFill("green")
     rectangle.draw(window)
 
-    center = gr.Circle(gr.Point(400, 200), 2)
+    center = gr.Circle(gr.Point(400, 300), 2)
     center.setFill("yellow")
     center.draw(window)
 
 
-def add(point_1, point_2):
-    new_point = gr.Point(point_1.x + point_2.x, point_1.y + point_2.y)
-
-    return new_point
-
-
-def sub(point_1, point_2):
-    new_point = gr.Point(point_1.x - point_2.x, point_1.y - point_2.y)
-
-    return new_point
+def pendulum(A, w, t):
+    x = A * math.sin(w * t)
+    return x
 
 
-def check_coords(coords, velocity):
-    if coords.x < 0 or coords.x > SIZE_X:
-        velocity.x = -velocity.x
+def get_new_coodrs(coords, old_x, new_x, center):
+    new_x = coords.x + (new_x - old_x)
+    new_y = (
+        math.sqrt(
+            (coords.x - center.x) ** 2
+            - ((new_x - center.x) ** 2)
+            + (coords.y - center.y) ** 2
+        )
+        + center.y
+    )
 
-    if coords.y < 0 or coords.y > SIZE_Y:
-        velocity.y = -velocity.y
-
-
-def update_coords(coords, velocity):
-    return add(coords, velocity)
-
-
-def update_velocity(velocity, acceleration):
-    return add(velocity, acceleration)
-
-
-def update_acceleration(ball_coords, center_coords):
-    diff = sub(ball_coords, center_coords)
-    distance_2 = (diff.x ** 2 + diff.y ** 2) ** (3 / 2)
-
-    G = 2000
-
-    return gr.Point(-diff.x * G / distance_2, -diff.y * G / distance_2)
+    return gr.Point(new_x, new_y)
 
 
 start_window()
 
 
 coords_old = gr.Point(400, 700)
-velocity = gr.Point(2, 0)
-acceleration = gr.Point(0, 0)
+w = math.sqrt(9.81 / 400)
+A = 200
 
 circle = gr.Circle(coords_old, 10)
 circle.setFill("red")
 
 circle.draw(window)
 
-line = gr.Line(gr.Point(400, 200), gr.Point(400, 700))
+line = gr.Line(gr.Point(400, 300), gr.Point(400, 700))
 line.draw(window)
 
-while True:
+t = 0
+old_x = 0
 
-    acceleration = update_acceleration(coords_old, gr.Point(400, 400))
-    velocity = update_velocity(velocity, acceleration)
-    coords_new = update_coords(coords_old, velocity)
-    check_coords(coords_new, velocity)
+while True:
+    new_x = pendulum(A, w, t)
+
+    coords_new = get_new_coodrs(coords_old, old_x, new_x, gr.Point(400, 300))
+
     circle.move(coords_new.x - coords_old.x, coords_new.y - coords_old.y)
+
     line.undraw()
     window.update()
-    line = gr.Line(gr.Point(400, 200), gr.Point(coords_new.x, coords_new.y))
+    line = gr.Line(gr.Point(400, 300), gr.Point(coords_new.x, coords_new.y))
     line.draw(window)
 
     coords_old = coords_new
+    old_x = new_x
 
-    gr.time.sleep(0.02)
+    t += 1
+    gr.time.sleep(0.1)
